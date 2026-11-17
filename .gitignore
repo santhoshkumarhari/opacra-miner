@@ -1,4 +1,4 @@
-/build
+/build*
 scripts/build
 scripts/deps
 /CMakeLists.txt.user
@@ -7,6 +7,9 @@ scripts/deps
 .vscode
 /.qtcreator
 /deps
-/libuv-src
+/libuv*
+__pycache__/
+*.py[cod]
 *-address.txt
 *.log
+
