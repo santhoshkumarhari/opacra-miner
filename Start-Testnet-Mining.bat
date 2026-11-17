@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
-title Opacra Miner (Testnet)
+title Opacra Miner - Testnet
 
 rem Check if testnet address is saved
 if exist testnet-address.txt goto check
@@ -12,7 +12,12 @@ set /p "ADDR=Paste your Opacra testnet wallet address (starts with Te) and press
 > testnet-address.txt echo(!ADDR!
 
 :check
-findstr /r /x "T[0-9A-Za-z]*" testnet-address.txt >nul || (del testnet-address.txt & echo Invalid Opacra testnet address. Addresses start with Te. & goto ask)
+findstr /r /x "T[0-9A-Za-z]*" testnet-address.txt >nul
+if errorlevel 1 (
+    del testnet-address.txt 2>nul
+    echo Invalid Opacra testnet address. Addresses start with Te.
+    goto ask
+)
 set "ADDR="
 set /p "ADDR=" < testnet-address.txt
 
@@ -23,15 +28,29 @@ echo Node daemon: 127.0.0.1:29971
 echo Note: Ensure your Opacra testnet node daemon is running!
 echo =======================================================
 
-if exist "%~dp0bin\xmrig.exe" (
-    "%~dp0bin\xmrig.exe" -o 127.0.0.1:29971 --daemon -a rx/opca --coin opacra -u "!ADDR!"
-) else if exist "%~dp0xmrig.exe" (
-    "%~dp0xmrig.exe" -o 127.0.0.1:29971 --daemon -a rx/opca --coin opacra -u "!ADDR!"
-) else if exist "%~dp0bin\xmrig" (
-    echo Native xmrig.exe not found; executing compiled miner via WSL...
-    wsl bash -c "'%~dp0bin/xmrig' -o 127.0.0.1:29971 --daemon -a rx/opca --coin opacra -u '!ADDR!'"
-) else (
-    echo Error: No miner binary found. Please run build.sh (via WSL) or build.bat first.
-)
+if exist "%~dp0bin\xmrig.exe" goto run_win_bin
+if exist "%~dp0xmrig.exe" goto run_win_root
+if exist "%~dp0bin\xmrig" goto run_wsl
+goto no_binary
 
+:run_win_bin
+"%~dp0bin\xmrig.exe" -o 127.0.0.1:29971 --daemon -a rx/opca --coin opacra -u "!ADDR!"
+goto done
+
+:run_win_root
+"%~dp0xmrig.exe" -o 127.0.0.1:29971 --daemon -a rx/opca --coin opacra -u "!ADDR!"
+goto done
+
+:run_wsl
+for /f "delims=" %%i in ('wsl wslpath -u "%~dp0bin\xmrig"') do (
+    wsl %%i -o 127.0.0.1:29971 --daemon -a rx/opca --coin opacra -u "!ADDR!"
+)
+goto done
+
+:no_binary
+echo Error: No miner binary found.
+echo Please run build.sh through WSL or build xmrig.exe for Windows.
+goto done
+
+:done
 pause

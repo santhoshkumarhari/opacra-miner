@@ -22,6 +22,7 @@
 
 
 #include <cassert>
+#include <cerrno>
 #include <random>
 
 
